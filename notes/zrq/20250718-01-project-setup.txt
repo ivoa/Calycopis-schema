@@ -1,0 +1,134 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2025, Manchester (http://www.manchester.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-indent
+#
+# AIMetrics: []
+#
+
+    Target:
+
+        Configure the schema project ...
+
+    Result:
+
+        Work in progress ...
+
+# -----------------------------------------------------
+
+    Create a new project in the IVOA organization.
+
+        git@github.com:ivoa/Calycopis-schema.git
+
+    Create a fork on our personal account.
+
+        git@github.com:Zarquan/Calycopis-schema.git
+
+
+# -----------------------------------------------------
+# Configure the project paths.
+#[user@desktop]
+
+    gedit "${HOME:?}/calycopis.env" &
+
+    +   TREBULA_REPO='git@github.com:Zarquan/Calycopis-schema.git'
+    +   TREBULA_HOME="${PROJECTS_ROOT}/IVOA/ivoa/Calycopis-schema"
+    +   TREBULA_CODE="${TREBULA_HOME:?}/github-zrq"
+
+
+# -----------------------------------------------------
+# Checkout a copy of our fork.
+#[user@desktop]
+
+    source "${HOME:?}/calycopis.env"
+    pushd "${TREBULA_HOME}"
+
+        git clone "${TREBULA_CODE}" 'github-zrq'
+
+--START--
+Cloning into 'github-zrq'...
+remote: Enumerating objects: 4, done.
+remote: Counting objects: 100% (4/4), done.
+remote: Compressing objects: 100% (4/4), done.
+remote: Total 4 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
+Receiving objects: 100% (4/4), 12.78 KiB | 6.39 MiB/s, done.
+--END--
+
+        pushd 'github-zrq'
+
+            git remote -v
+
+--START--
+origin	git@github.com:Zarquan/Calycopis-schema.git (fetch)
+origin	git@github.com:Zarquan/Calycopis-schema.git (push)
+--END--
+
+            git remote add 'upstream' 'git@github.com:ivoa/Calycopis-schema.git'
+
+            git remote -v
+
+--START--
+origin	git@github.com:Zarquan/Calycopis-schema.git (fetch)
+origin	git@github.com:Zarquan/Calycopis-schema.git (push)
+upstream	git@github.com:ivoa/Calycopis-schema.git (fetch)
+upstream	git@github.com:ivoa/Calycopis-schema.git (push)
+--END--
+
+
+# -----------------------------------------------------
+# Create a project-setup branch.
+#[user@desktop]
+
+    source "${HOME:?}/calycopis.env"
+    pushd "${TREBULA_CODE}"
+
+        branchname=project-setup
+
+        newbranch=$(date '+%Y%m%d')-zrq-${branchname:?}
+
+        git checkout main
+
+        git checkout -b "${newbranch:?}"
+
+    popd
+
+
+# -----------------------------------------------------
+# Add the project files.
+#[user@desktop]
+
+    source "${HOME:?}/calycopis.env"
+    pushd "${TREBULA_CODE}"
+
+        cp "${CALYCOPIS_CODE}/CODE_OF_CONDUCT.md" 'CODE_OF_CONDUCT.md'
+        cp "${CALYCOPIS_CODE}/CONTRIBUTING.md"    'CONTRIBUTING.md'
+
+        pluma 'README.md' &
+
+        ....
+
+        git add .
+
+        git commit -m "Added project files"
+
+
+
+
+
