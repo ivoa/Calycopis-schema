@@ -62,34 +62,28 @@
 
         git clone "${TREBULA_CODE}" 'github-zrq'
 
---START--
-Cloning into 'github-zrq'...
-remote: Enumerating objects: 4, done.
-remote: Counting objects: 100% (4/4), done.
-remote: Compressing objects: 100% (4/4), done.
-remote: Total 4 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
-Receiving objects: 100% (4/4), 12.78 KiB | 6.39 MiB/s, done.
---END--
+    >   Cloning into 'github-zrq'...
+    >   remote: Enumerating objects: 4, done.
+    >   remote: Counting objects: 100% (4/4), done.
+    >   remote: Compressing objects: 100% (4/4), done.
+    >   remote: Total 4 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
+    >   Receiving objects: 100% (4/4), 12.78 KiB | 6.39 MiB/s, done.
 
         pushd 'github-zrq'
 
             git remote -v
 
---START--
-origin	git@github.com:Zarquan/Calycopis-schema.git (fetch)
-origin	git@github.com:Zarquan/Calycopis-schema.git (push)
---END--
+    >   origin	git@github.com:Zarquan/Calycopis-schema.git (fetch)
+    >   origin	git@github.com:Zarquan/Calycopis-schema.git (push)
 
             git remote add 'upstream' 'git@github.com:ivoa/Calycopis-schema.git'
 
             git remote -v
 
---START--
-origin	git@github.com:Zarquan/Calycopis-schema.git (fetch)
-origin	git@github.com:Zarquan/Calycopis-schema.git (push)
-upstream	git@github.com:ivoa/Calycopis-schema.git (fetch)
-upstream	git@github.com:ivoa/Calycopis-schema.git (push)
---END--
+    >   origin	git@github.com:Zarquan/Calycopis-schema.git (fetch)
+    >   origin	git@github.com:Zarquan/Calycopis-schema.git (push)
+    >   upstream	git@github.com:ivoa/Calycopis-schema.git (fetch)
+    >   upstream	git@github.com:ivoa/Calycopis-schema.git (push)
 
 
 # -----------------------------------------------------
