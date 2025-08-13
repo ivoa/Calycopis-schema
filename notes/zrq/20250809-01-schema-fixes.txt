@@ -1,0 +1,229 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2025, Manchester (http://www.manchester.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-indent
+#
+# AIMetrics: []
+#
+
+    Target:
+
+        Fixing a bug found in the regex for ISO8601 Interval in the Python client
+        generated from the OpenAPI schema.
+
+    Result:
+
+        Work in progress ...
+
+# -----------------------------------------------------
+
+        python
+
+import openapi_client
+from openapi_client.rest import ApiException
+from pprint import pprint
+
+configuration = openapi_client.Configuration(
+    host = "http://127.0.0.1:8082"
+)
+
+with openapi_client.ApiClient(configuration) as api_client:
+
+    api_instance = openapi_client.DefaultApi(api_client)
+    uuid = '63175731-c561-4abc-a336-1ed56db2f085'
+
+    try:
+        api_response = api_instance.execution_session_get(uuid)
+        print("The response of DefaultApi->execution_session_get:\n")
+        pprint(api_response)
+
+    except ApiException as e:
+        print("Exception when calling DefaultApi->execution_session_get: %s\n" % e)
+
+--START--
+....
+....
+  File "/python/albert/client/openapi_client/models/execution_session_response.py", line 157, in from_dict
+    "schedule": ComponentSchedule.from_dict(obj["schedule"]) if obj.get("schedule") is not None else None,
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/python/albert/client/openapi_client/models/component_schedule.py", line 92, in from_dict
+    "offered": OfferedScheduleBlock.from_dict(obj["offered"]) if obj.get("offered") is not None else None,
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/python/albert/client/openapi_client/models/offered_schedule_block.py", line 97, in from_dict
+    "available": OfferedScheduleInterval.from_dict(obj["available"]) if obj.get("available") is not None else None,
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/python/albert/client/openapi_client/models/offered_schedule_interval.py", line 104, in from_dict
+    _obj = cls.model_validate({
+        "duration": obj.get("duration"),
+        "start": obj.get("start")
+    })
+  File "/usr/local/lib/python3.13/site-packages/pydantic/main.py", line 705, in model_validate
+    return cls.__pydantic_validator__.validate_python(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        obj, strict=strict, from_attributes=from_attributes, context=context, by_alias=by_alias, by_name=by_name
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for OfferedScheduleInterval
+start
+  Value error, must validate the regular expression
+    /^(\d{4}(?:-\d{2}){2}T\d{2}(?::\d{2}){2}(?>[^\/]+))\/(P(?=.)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?=.)(?:\d+H)?(?:\d+M)?(?:\d+S)?)?)$/
+    [type=value_error, input_value='2025-08-08T22:13:00Z', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/value_error
+--END--
+
+    #
+    # Looks like the date formatting is wrong.
+    # Found a bug in our schema.
+
+    OfferedScheduleInterval:
+      description: Details of an offered timing.
+      type: object
+      title: OfferedScheduleInterval
+      properties:
+        duration:
+          $ref: '#/components/schemas/ISO8601Duration'
+        start:
+          $ref: '#/components/schemas/ISO8601Interval'
+
+    #
+    # The generated Pydantic code ..
+    # offered_schedule_interval.py
+
+    class OfferedScheduleInterval(BaseModel):
+        """
+        Details of an offered timing.
+        """ # noqa: E501
+        duration: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="A regular expression filter for an ISO 8601 duration.")
+        start: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="A regular expression filter for an ISO 8601 interval. TODO Add timezone to the start time. TODO Expand this to allow [start+end] and [duration+end] ?")
+        __properties: ClassVar[List[str]] = ["duration", "start"]
+
+    #
+    # Note the comment in the description.
+    # "A regular expression filter for an ISO 8601 interval. TODO Add timezone to the start time. ..."
+    #
+    # .. which came from my OpenAPI schema.
+    # https://github.com/Zarquan/Calycopis-schema/blob/71ed9f2165ef9c6430b556c4661d5893c491ccaf/schema/components/utils.yaml#L63-L70
+
+        ISO8601Interval:
+          description: >-
+            A regular expression filter for an ISO 8601 interval.
+            TODO Add timezone to the start time.
+            TODO Expand this to allow [start+end] and [duration+end] ?
+          type: string
+          title: ISO8601Interval
+          pattern: '^(\d{4}(?:-\d{2}){2}T\d{2}(?::\d{2}){2}(?>[^\/]+))\/(P(?=.)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?=.)(?:\d+H)?(?:\d+M)?(?:\d+S)?)?)$'
+
+    #
+    # The generated Java class has the same structure.
+    # IvoaOfferedScheduleInterval.java 67-78
+
+      /**
+       * A regular expression filter for an ISO 8601 interval. TODO Add timezone to the start time. TODO Expand this to allow [start+end] and [duration+end] ?
+       * @return start
+       */
+      @Pattern(regexp = "^(\\d{4}(?:-\\d{2}){2}T\\d{2}(?::\\d{2}){2}(?>[^/]+))/(P(?=.)(?:\\d+Y)?(?:\\d+M)?(?:\\d+D)?(?:T(?=.)(?:\\d+H)?(?:\\d+M)?(?:\\d+S)?)?)$")
+      @Schema(name = "start", description = "A regular expression filter for an ISO 8601 interval. TODO Add timezone to the start time. TODO Expand this to allow [start+end] and [duration+end] ?", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+      @JsonProperty("start")
+      @JacksonXmlProperty(localName = "start")
+      @XmlElement(name = "start")
+      public String getStart() {
+        return start;
+      }
+
+    #
+    # The human written Java parser code
+    # https://github.com/Zarquan/Calycopis-broker/blob/c7943ce31336fe4da10eea442897f4de0df227c9/java/spring/spring-webapp/src/main/java/net/ivoa/calycopis/datamodel/offerset/OfferSetRequestParserImpl.java#L338-L340
+
+        Interval startinterval = Interval.parse(
+            startString
+            );
+
+    #
+    # None of the examples have included a start sime in the sechedule.
+    # Mainly because we would have to updated it weach time we run the tests.
+    # My bad.
+    #
+
+    #
+    # Code to generate the string value just uses the default Instant toString() method.
+    # https://github.com/Zarquan/Calycopis-broker/blob/c7943ce31336fe4da10eea442897f4de0df227c9/java/spring/spring-webapp/src/main/java/net/ivoa/calycopis/datamodel/component/ScheduledComponentEntity.java#L255-L260
+
+    @Override
+    public Instant getAvailableStartInstant()
+        {
+        return Instant.ofEpochSecond(
+            availableStartInstantSeconds
+            );
+        }
+
+    public IvoaOfferedScheduleInterval makeOfferedAvailableBean()
+        {
+        ....
+        ....
+        if (getAvailableStartInstantSeconds() > 0)
+            {
+            StringBuffer buffer = new StringBuffer();
+            buffer.append(
+                getAvailableStartInstant().toString()
+                );
+        ....
+        ....
+        }
+
+
+    #
+    # The Java documenttation for Instant.toString()
+    # https://docs.oracle.com/javase/8/docs/api/java/time/Instant.html#toString--
+
+        A string representation of this instant using ISO-8601 representation.
+        The format used is the same as DateTimeFormatter.ISO_INSTANT.
+
+    # DateTimeFormatter.ISO_INSTANT
+    # https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_INSTANT
+
+        The ISO instant formatter that formats or parses an instant in UTC, such as '2011-12-03T10:15:30Z'.
+
+        This returns an immutable formatter capable of formatting and parsing the ISO-8601 instant format.
+        When formatting, the second-of-minute is always output. The nano-of-second outputs zero, three, six
+        or nine digits digits as necessary.
+        When parsing, time to at least the seconds field is required. Fractional seconds from zero to nine
+        are parsed. The localized decimal style is not used.
+
+        This is a special case formatter intended to allow a human readable form of an Instant.
+        The Instant class is designed to only represent a point in time and internally stores a value in nanoseconds
+        from a fixed epoch of 1970-01-01Z. As such, an Instant cannot be formatted as a date or time without providing
+        some form of time-zone.
+        This formatter allows the Instant to be formatted, by providing a suitable conversion using ZoneOffset.UTC.
+
+    #
+    # Looks like the Java implementation is the right one, and I should complete my TODO
+    # and add 'Z' time zone support for the interval.
+    #
+
+# -----------------------------------------------------
+
+    #
+    # Asked ChatGPT for a regex pattern.
+    # https://chatgpt.com/c/689756ec-1b54-8322-bd5f-1426cf7e9f57
+    # https://chatgpt.com/share/68975beb-1298-8008-b439-a0cd06b636cf
+
+
+
