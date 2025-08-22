@@ -1,0 +1,336 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2025, Manchester (http://www.manchester.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-indent
+#
+# AIMetrics: []
+#
+
+    Target:
+
+        Testing inertoperability between Java server and Python client.
+
+    Result:
+
+        Success.
+        Python client can request offers from a Java server and process the response.
+
+    TODO
+
+        The generated client adds accept headers for JSON, YAML and XML.
+        Probably remove the XML option from the webservice API because it isn't well supported.
+
+        Try generating a client with just the YAML serialization and see if it works.
+
+        Where do we put the OpenAPI service schema ?
+
+        At the moment it is in the spring-openapi Maven project, but that makes it Java server specific.
+        The top level OpenAPI schema for the service probably needs to be higher up in the repository.
+        Either at the top level of Calycopis-broker, or in Calycopis-schema ?
+
+        Calycopis-schema
+          |
+          +-- schema
+                |
+                +-- services
+                |     |
+                |     +-- Calycopis-broker.yaml
+                |     +-- Calycopis-discovery.yaml
+                |     +-- Calycopis-editor.yaml
+                |
+                +-- components
+                |     |
+                |     +--
+                |     +--
+                |
+                +-- types
+                      |
+                      +--
+                      +--
+
+
+# -----------------------------------------------------
+# Combine the OpenAPI schema.
+#[user@desktop]
+
+    source "${HOME:?}/calycopis.env"
+    podman run \
+        --rm \
+        --tty \
+        --pod testing \
+        --interactive \
+        --name schema-builder \
+        --volume "${TREBULA_CODE}:/trebula:rw,z" \
+        --volume "${ISOBEON_CODE}:/isobeon:rw,z" \
+        --volume "${CALYCOPIS_CODE}:/calycopis:rw,z" \
+        fedora:42 \
+        bash
+
+        dnf install -y \
+            python3 \
+            python3-pip
+
+        pip3 install \
+            pyyaml
+
+        source=$(
+            mktemp --directory
+            )
+
+        ln -s '/calycopis/java/spring/spring-openapi/openapi/openapi.yaml' "${source}"
+        ln -s '/trebula/schema' "${source}"
+        ls -al "${source}"
+
+        target=/trebula/build
+
+        rm -rf "${target}"
+        mkdir  "${target}"
+        ls -al "${target}"
+
+        /isobeon/schema-processor.py \
+            "${source}/openapi.yaml" \
+            "${target}/openapi-full.yaml"
+
+--START--
+....
+....
+Inlining from discriminator mapping: IntegerValueUpdate
+Expanding short $ref: 'AbstractUpdate' → '#/components/schemas/AbstractUpdate'
+Inlining from discriminator mapping: IntegerDeltaUpdate
+Expanding short $ref: 'AbstractUpdate' → '#/components/schemas/AbstractUpdate'
+✅ All references processed and saved.
+--END--
+
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Build and run the Java broker.
+#[user@desktop]
+
+    source "${HOME:?}/calycopis.env"
+    podman run \
+        --rm \
+        --tty \
+        --pod testing \
+        --interactive \
+        --name spring-builder \
+        --volume "${HOME}/.m2/repository:/root/.m2/repository:rw,z" \
+        --volume "${TREBULA_CODE}:/trebula:rw,z" \
+        --volume "${CALYCOPIS_CODE}:/calycopis:rw,z" \
+        ghcr.io/ivoa/calycopis/java-builder:2024.08.30 \
+        bash
+
+    pushd /calycopis/java/spring/spring-openapi
+
+        rm -rf ./openapi/target
+        mkdir  ./openapi/target
+        ln -s  /trebula/build/openapi-full.yaml \
+               ./openapi/target/openapi-full.yaml
+
+        ls -al ./openapi/target
+
+    popd
+
+    pushd /calycopis/java/spring/spring-openapi ; ./mvnw clean install ; popd
+
+        ....
+        ....
+
+    pushd /calycopis/java/spring/spring-webapp  ; ./mvnw clean spring-boot:run ; popd
+
+        ....
+        ....
+
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Build and test the Python client.
+#[user@desktop]
+
+        dnf install -y \
+            wget
+
+        wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.14.0/openapi-generator-cli-7.14.0.jar \
+             -O /tmp/openapi-generator.jar
+
+        dnf install -y \
+            java-latest-openjdk
+
+        source=/trebula/build/
+        target=/calycopis/python/albert
+
+        rm -rf "${target}"
+        mkdir  "${target}"
+        ls -al "${target}"
+
+        #
+        # Generate a Python client.
+        # https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/python.md
+        java -jar /tmp/openapi-generator.jar \
+            generate \
+            --generator-name python \
+            --input-spec "${source}/openapi-full.yaml" \
+            --output     "${target}/client"
+
+--START--
+....
+....
+[main] INFO  o.o.codegen.TemplateManager - writing file /calycopis/python/albert/client/openapi_client/rest.py
+[main] INFO  o.o.codegen.TemplateManager - writing file /calycopis/python/albert/client/.openapi-generator-ignore
+[main] INFO  o.o.codegen.TemplateManager - writing file /calycopis/python/albert/client/.openapi-generator/VERSION
+[main] INFO  o.o.codegen.TemplateManager - writing file /calycopis/python/albert/client/.openapi-generator/FILES
+--END--
+
+
+        dnf install -y \
+            python3 \
+            python3-pip
+
+        pushd /calycopis/python/albert/client/
+
+            pip install -r requirements.txt
+
+            python
+
+import openapi_client
+from openapi_client.rest import ApiException
+from pprint import pprint
+
+configuration = openapi_client.Configuration(
+    host = "http://127.0.0.1:8082"
+    )
+
+api_client = openapi_client.ApiClient(
+    configuration
+    )
+
+api_instance = openapi_client.DefaultApi(
+    api_client
+    )
+
+from openapi_client.models.offer_set_request import OfferSetRequest
+from openapi_client.models.jupyter_notebook  import JupyterNotebook
+
+request = OfferSetRequest()
+
+request.executable = JupyterNotebook(
+    type = 'https://www.purl.org/ivoa.net/EB/schema/types/executable/jupyter-notebook-1.0',
+    location = 'http://example.org'
+    )
+
+try:
+    api_response = api_instance.offer_set_post(request)
+    print("Response:\n")
+    pprint(api_response)
+
+except ApiException as e:
+    print("Exception: %s\n" % e)
+
+
+--START--
+....
+....
+OfferSetResponse(
+    uuid='93e71124-dd92-44f2-a805-86d707f4cd26',
+    name=None,
+    type='https://www.purl.org/ivoa.net/EB/schema/types/offerset/offerset-response-1.0',
+    created=datetime.datetime(
+        2025,8,11,10,7,53,191735,
+        tzinfo=TzInfo(UTC)
+        ),
+    messages=None,
+    href='http://127.0.0.1:8082/offersets/93e71124-dd92-44f2-a805-86d707f4cd26',
+    result='YES',
+    description=None,
+    offers=[
+        ExecutionSessionResponse(
+            uuid='80ff9fe0-2775-4929-92a6-21e0ed63904f',
+            name='null-offer-0',
+            type='https://www.purl.org/ivoa.net/EB/schema/types/session/execution-session-response-1.0',
+            created=datetime.datetime(
+                2025,8,11,10,7,53,504911,
+                tzinfo=TzInfo(UTC)
+                ),
+            messages=None,
+            href='http://127.0.0.1:8082/sessions/80ff9fe0-2775-4929-92a6-21e0ed63904f',
+            schedule=ComponentSchedule(
+                offered=OfferedScheduleBlock(
+                    preparing=OfferedScheduleInstant(
+                        duration=None,
+                        start='2025-08-11T10:08:00Z'
+                        ),
+                    available=OfferedScheduleInterval(
+                        duration='PT4H',
+                        start='2025-08-11T10:08:00Z/PT0S'
+                        ),
+                    releasing=None
+                    ),
+                observed=None
+                ),
+            executable=JupyterNotebook(
+                uuid='b518ddcd-0528-495b-b906-8883f9825517',
+                name=None,
+                type='https://www.purl.org/ivoa.net/EB/schema/types/executable/jupyter-notebook-1.0',
+                created=datetime.datetime(
+                    2025,8,11,10,7,53,517947,
+                    tzinfo=TzInfo(UTC)
+                    ),
+                messages=None,
+                schedule=None,
+                access=None,
+                location='http://example.org'
+                ),
+            computer=SimpleComputeResource(
+                uuid='358182e5-ddc3-443a-b914-6a32cdca49dd',
+                name=None,
+                type='https://www.purl.org/ivoa.net/EB/schema/types/computer/simple-compute-resource-1.0',
+                created=None,
+                messages=None,
+                schedule=None,
+                cores=SimpleComputeCores(
+                    min=2,
+                    max=2
+                    ),
+                memory=SimpleComputeMemory(
+                    min=2,
+                    max=2
+                    ),
+                volumes=None
+                ),
+            storage=None,
+            volumes=None,
+            data=None,
+            phase=<ExecutionSessionPhase.OFFERED: 'OFFERED'>,
+            expires=datetime.datetime(
+                2025,8,11,15,7,53,191769,
+                tzinfo=TzInfo(UTC)
+                ),
+            options=None
+            ),
+        ....
+        ....
+        ]
+    )
+--END--
+
+    #
+    # Yay - Python client can request offers from a Java server and process the response :-D
+    #
+

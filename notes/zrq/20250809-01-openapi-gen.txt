@@ -1,0 +1,743 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2025, Manchester (http://www.manchester.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-indent
+#
+# AIMetrics: []
+#
+
+    Target:
+
+        Experiment with generating Python components from the OpenAPI spec.
+        https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/python.md
+
+        Encountered an issue with regex for ISO8601 Interval
+
+        Asked ChatGPT for a regex pattern.
+        https://chatgpt.com/c/689756ec-1b54-8322-bd5f-1426cf7e9f57
+        https://chatgpt.com/share/68975beb-1298-8008-b439-a0cd06b636cf
+
+    Result:
+
+        Work in progress ...
+
+
+# -----------------------------------------------------
+# Create our testing pod.
+#[user@desktop]
+
+    podman pod rm testing
+
+    podman pod create \
+        --publish 8082 \
+        --name testing
+
+# -----------------------------------------------------
+# Build the combined schema.
+#[user@desktop]
+
+    #
+    # TODO Publish the schema processor as a Docker container.
+    #
+
+    source "${HOME:?}/calycopis.env"
+    podman run \
+        --rm \
+        --tty \
+        --pod testing \
+        --interactive \
+        --name schema-builder \
+        --volume "${TREBULA_CODE}:/trebula:rw,z" \
+        --volume "${ISOBEON_CODE}:/isobeon:rw,z" \
+        --volume "${CALYCOPIS_CODE}:/calycopis:rw,z" \
+        fedora:42 \
+        bash
+
+        dnf install -y \
+            python3 \
+            python3-pip
+
+        pip3 install \
+            pyyaml
+
+        source=$(
+            mktemp --directory
+            )
+
+        ln -s '/calycopis/java/spring/spring-openapi/openapi/openapi.yaml' "${source}"
+        ln -s '/trebula/schema' "${source}"
+        ls -al "${source}"
+
+        target=/trebula/build
+
+        ls -al "${target}"
+        rm -rf "${target}"
+        mkdir  "${target}"
+
+        /isobeon/schema-processor.py \
+            "${source}/openapi.yaml" \
+            "${target}/openapi-full.yaml"
+
+        ls -al "${target}"
+
+        head "${target}/openapi-full.yaml"
+
+
+# -----------------------------------------------------
+# Build and run the Java broker.
+#[user@desktop]
+
+    source "${HOME:?}/calycopis.env"
+    podman run \
+        --rm \
+        --tty \
+        --pod testing \
+        --interactive \
+        --name spring-builder \
+        --volume "${HOME}/.m2/repository:/root/.m2/repository:rw,z" \
+        --volume "${TREBULA_CODE}:/trebula:rw,z" \
+        --volume "${CALYCOPIS_CODE}/java:/java:rw,z" \
+        --volume "${CALYCOPIS_CODE}/examples:/examples:rw,z" \
+        ghcr.io/ivoa/calycopis/java-builder:2024.08.30 \
+        bash
+
+    pushd /java/spring/spring-openapi
+
+        rm -rf ./openapi/target
+        mkdir  ./openapi/target
+        ln -s  /trebula/build/openapi-full.yaml \
+               ./openapi/target/openapi-full.yaml
+
+        ./mvnw clean install
+
+    popd
+
+    pushd /java/spring/spring-webapp  ; ./mvnw clean spring-boot:run ; popd
+
+        ....
+        ....
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Check the examples work.
+#[user@desktop]
+
+    source "${HOME:?}/calycopis.env"
+    podman run \
+        --rm \
+        --tty \
+        --pod testing \
+        --interactive \
+        --name curl-tester \
+        --volume "${CALYCOPIS_CODE}/examples:/examples:rw,z" \
+        fedora:42 \
+        bash
+
+        dnf install -y \
+            curl \
+            yq
+
+        examplename=example-001
+        examplebase=/examples/${examplename}/${examplename}
+
+        curl \
+            --silent \
+            --show-error \
+            --header 'Content-Type: application/yaml' \
+            --data-binary "@${examplebase}-001-offerset-request.yaml" \
+            --header 'Accept: application/yaml' \
+            'http://127.0.0.1:8082/offersets' \
+        | yq '.'
+
+--START--
+uuid: "bddc727c-2ba2-430c-aec2-6ef654f47469"
+name: "example-001"
+type: "https://www.purl.org/ivoa.net/EB/schema/types/offerset/offerset-response-1.0"
+created: "2025-08-09T19:21:27.501346277Z"
+href: "http://127.0.0.1:8082/offersets/bddc727c-2ba2-430c-aec2-6ef654f47469"
+result: "YES"
+offers:
+  - uuid: "812ceb1a-150f-43eb-a4b8-2ce77e0cf968"
+    name: "example-001-offer-0"
+    type: "https://www.purl.org/ivoa.net/EB/schema/types/session/execution-session-response-1.0"
+    created: "2025-08-09T19:21:27.796459366Z"
+    href: "http://127.0.0.1:8082/sessions/812ceb1a-150f-43eb-a4b8-2ce77e0cf968"
+    ....
+    ....
+--END--
+
+
+# -----------------------------------------------------
+# Experiment with the Python generator.
+# https://github.com/OpenAPITools/openapi-generator?tab=readme-ov-file#13---download-jar
+#[user@desktop]
+
+    source "${HOME:?}/calycopis.env"
+    podman run \
+        --rm \
+        --tty \
+        --interactive \
+        --name python-builder \
+        --volume "${TREBULA_CODE}:/trebula:rw,z" \
+        --volume "${CALYCOPIS_CODE}/python:/python:rw,z" \
+        fedora:42 \
+        bash
+
+        dnf install -y \
+            wget
+
+        wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.14.0/openapi-generator-cli-7.14.0.jar \
+             -O /tmp/openapi-generator.jar
+
+        dnf install -y \
+            java-latest-openjdk
+
+        source=/trebula/build/
+        target=/python/albert
+
+        rm -rf "${target}"
+        mkdir  "${target}"
+
+        #
+        # Generate a Python client.
+        # https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/python.md
+        java -jar /tmp/openapi-generator.jar \
+            generate \
+            --generator-name python \
+            --input-spec "${source}/openapi-full.yaml" \
+            --output     "${target}/client"
+
+--START--
+....
+....
+[main] INFO  o.o.codegen.TemplateManager - writing file /python/albert/client/openapi_client/rest.py
+[main] INFO  o.o.codegen.TemplateManager - writing file /python/albert/client/.openapi-generator-ignore
+[main] INFO  o.o.codegen.TemplateManager - writing file /python/albert/client/.openapi-generator/VERSION
+[main] INFO  o.o.codegen.TemplateManager - writing file /python/albert/client/.openapi-generator/FILES
+--END--
+
+
+# -----------------------------------------------------
+# Try using the Python client.
+#[user@desktop]
+
+    source "${HOME:?}/calycopis.env"
+    podman run \
+        --rm \
+        --tty \
+        --pod testing \
+        --interactive \
+        --name python-tester \
+        --volume "${CALYCOPIS_CODE}/python:/python:rw,z" \
+        fedora:42 \
+        bash
+
+        dnf install -y \
+            python3 \
+            python3-pip
+
+        pushd /python/albert/client/
+
+            ls -al
+
+            #
+            # Skip the setup.
+            #
+
+            pip install -r requirements.txt
+
+        #
+        # Try get an offerset from the server.
+        #
+
+        python
+
+import openapi_client
+from openapi_client.rest import ApiException
+from pprint import pprint
+
+configuration = openapi_client.Configuration(
+    host = "http://127.0.0.1:8082"
+)
+
+with openapi_client.ApiClient(configuration) as api_client:
+
+    api_instance = openapi_client.DefaultApi(api_client)
+    uuid = '812ceb1a-150f-43eb-a4b8-2ce77e0cf968'
+
+    try:
+        api_response = api_instance.execution_session_get(uuid)
+        print("The response of DefaultApi->execution_session_get:\n")
+        pprint(api_response)
+
+    except ApiException as e:
+        print("Exception when calling DefaultApi->execution_session_get: %s\n" % e)
+
+
+--START--
+....
+....
+File "/python/albert/client/openapi_client/models/offered_schedule_interval.py", line 50, in start_validate_regular_expression
+    if not re.match(r"^(?:(\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2} ....
+....
+....
+raise source.error("missing ), unterminated subpattern", source.tell() - start)
+--END--
+
+    #
+    # Back to Chat GPT ... who seems to be guessing at this point.
+    # New suggestion doesn't even work with all the examples it gave me.
+    #
+
+    2023-08-09T12:00:00Z                        - FAIL
+    2023-08-09T12:00:00Z/2023-08-09T13:00:00Z   - PASS
+    2023-08-09T12:00:00Z/PT1H                   - PASS
+    PT1H/2023-08-09T13:00:00Z                   - PASS
+
+    2023-08-09T12:00:00Z/2023-08-09T13:00:00Z   - PASS
+    2023-08-09/PT2H                             - FAIL
+    PT2H/2023-08-09                             - FAIL
+    P1Y2M3DT4H5M6S/P1Y                          - PASS but what is this ?
+
+    #
+    # Interesting investigation into AI generated regex patterns ..
+    # but is there a simpler way ?
+    #
+    # Should the offer start time be an instant not an interval ?
+    # Should we be transmitting these things in seconds after 1970 anyway ?
+    # Should we be transmitting them in hex ?
+    #
+
+    #
+    # Seem to have a valid regex from Chat GPT.
+    # Needed several rounds of testing and poking to get it to work.
+    # https://chatgpt.com/share/68975beb-1298-8008-b439-a0cd06b636cf
+    #
+    # Using Regex101 to check the result.
+    # https://regex101.com/
+    #
+
+
+# -----------------------------------------------------
+# Rebuild and test ....
+#[user@desktop]
+
+    #
+    # TODO Publish the schema processor as a Docker container.
+    #
+
+    source "${HOME:?}/calycopis.env"
+    podman run \
+        --rm \
+        --tty \
+        --pod testing \
+        --interactive \
+        --name schema-builder \
+        --volume "${TREBULA_CODE}:/trebula:rw,z" \
+        --volume "${ISOBEON_CODE}:/isobeon:rw,z" \
+        --volume "${CALYCOPIS_CODE}:/calycopis:rw,z" \
+        fedora:42 \
+        bash
+
+        dnf install -y \
+            python3 \
+            python3-pip
+
+        pip3 install \
+            pyyaml
+
+        source=$(
+            mktemp --directory
+            )
+
+        ln -s '/calycopis/java/spring/spring-openapi/openapi/openapi.yaml' "${source}"
+        ln -s '/trebula/schema' "${source}"
+        ls -al "${source}"
+
+        target=/trebula/build
+
+        rm -rf "${target}"
+        mkdir  "${target}"
+        ls -al "${target}"
+
+        /isobeon/schema-processor.py \
+            "${source}/openapi.yaml" \
+            "${target}/openapi-full.yaml"
+
+        ls -al "${target}"
+
+        head "${target}/openapi-full.yaml"
+
+--START--
+....
+....
+Inlining from discriminator mapping: IntegerValueUpdate
+Expanding short $ref: 'AbstractUpdate' → '#/components/schemas/AbstractUpdate'
+Inlining from discriminator mapping: IntegerDeltaUpdate
+Expanding short $ref: 'AbstractUpdate' → '#/components/schemas/AbstractUpdate'
+✅ All references processed and saved.
+--END--
+
+--START--
+openapi: 3.1.0
+info:
+  title: IVOA ExecutionBroker
+  version: '1.0'
+  summary: IVOA ExecutionBroker interface
+  description: IVOA ExecutionBroker interface
+....
+....
+--END--
+
+
+# -----------------------------------------------------
+# Build and run the Java broker.
+#[user@desktop]
+
+    source "${HOME:?}/calycopis.env"
+    podman run \
+        --rm \
+        --tty \
+        --pod testing \
+        --interactive \
+        --name spring-builder \
+        --volume "${HOME}/.m2/repository:/root/.m2/repository:rw,z" \
+        --volume "${TREBULA_CODE}:/trebula:rw,z" \
+        --volume "${CALYCOPIS_CODE}:/calycopis:rw,z" \
+        ghcr.io/ivoa/calycopis/java-builder:2024.08.30 \
+        bash
+
+    pushd /calycopis/java/spring/spring-openapi
+
+        rm -rf ./openapi/target
+        mkdir  ./openapi/target
+        ln -s  /trebula/build/openapi-full.yaml \
+               ./openapi/target/openapi-full.yaml
+
+        ls -al ./openapi/target
+
+        ./mvnw clean install
+
+    popd
+
+    pushd /calycopis/java/spring/spring-webapp  ; ./mvnw clean spring-boot:run ; popd
+
+        ....
+        ....
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Check the examples work.
+#[user@desktop]
+
+    source "${HOME:?}/calycopis.env"
+    podman run \
+        --rm \
+        --tty \
+        --pod testing \
+        --interactive \
+        --name curl-tester \
+        --volume "${CALYCOPIS_CODE}:/calycopis:rw,z" \
+        fedora:42 \
+        bash
+
+        dnf install -y \
+            curl \
+            yq
+
+        examplename=example-001
+        examplebase=/calycopis/examples/${examplename}/${examplename}
+
+        curl \
+            --silent \
+            --show-error \
+            --header 'Content-Type: application/yaml' \
+            --data-binary "@${examplebase}-001-offerset-request.yaml" \
+            --header 'Accept: application/yaml' \
+            'http://127.0.0.1:8082/offersets' \
+        | yq '.'
+
+--START--
+uuid: "a614146c-2692-43d9-814a-d38bc0c0b809"
+name: "example-001"
+type: "https://www.purl.org/ivoa.net/EB/schema/types/offerset/offerset-response-1.0"
+created: "2025-08-10T14:35:43.855194536Z"
+href: "http://127.0.0.1:8082/offersets/a614146c-2692-43d9-814a-d38bc0c0b809"
+result: "YES"
+offers:
+  - uuid: "7875bf36-19f0-4712-9714-1bee7eec1175"
+    name: "example-001-offer-0"
+    type: "https://www.purl.org/ivoa.net/EB/schema/types/session/execution-session-response-1.0"
+    created: "2025-08-10T14:35:44.166808455Z"
+    href: "http://127.0.0.1:8082/sessions/7875bf36-19f0-4712-9714-1bee7eec1175"
+    schedule:
+      offered:
+        preparing:
+          start: "2025-08-10T14:36:00Z"
+        available:
+          duration: "PT2H"
+          start: "2025-08-10T14:36:00Z/PT0S"
+    ....
+    ....
+--END--
+
+
+# -----------------------------------------------------
+# Experiment with the Python generator.
+# https://github.com/OpenAPITools/openapi-generator?tab=readme-ov-file#13---download-jar
+#[user@desktop]
+
+    source "${HOME:?}/calycopis.env"
+    podman run \
+        --rm \
+        --tty \
+        --interactive \
+        --name python-builder \
+        --volume "${TREBULA_CODE}:/trebula:rw,z" \
+        --volume "${CALYCOPIS_CODE}:/calycopis:rw,z" \
+        fedora:42 \
+        bash
+
+        dnf install -y \
+            wget
+
+        wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.14.0/openapi-generator-cli-7.14.0.jar \
+             -O /tmp/openapi-generator.jar
+
+        dnf install -y \
+            java-latest-openjdk
+
+        source=/trebula/build/
+        target=/calycopis/python/albert
+
+        rm -rf "${target}"
+        mkdir  "${target}"
+        ls -al "${target}"
+
+        #
+        # Generate a Python client.
+        # https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/python.md
+        java -jar /tmp/openapi-generator.jar \
+            generate \
+            --generator-name python \
+            --input-spec "${source}/openapi-full.yaml" \
+            --output     "${target}/client"
+
+--START--
+....
+....
+[main] INFO  o.o.codegen.TemplateManager - writing file /calycopis/python/albert/client/openapi_client/rest.py
+[main] INFO  o.o.codegen.TemplateManager - writing file /calycopis/python/albert/client/.openapi-generator-ignore
+[main] INFO  o.o.codegen.TemplateManager - writing file /calycopis/python/albert/client/.openapi-generator/VERSION
+[main] INFO  o.o.codegen.TemplateManager - writing file /calycopis/python/albert/client/.openapi-generator/FILES
+--END--
+
+
+# -----------------------------------------------------
+# Try using the Python client.
+#[user@desktop]
+
+    source "${HOME:?}/calycopis.env"
+    podman run \
+        --rm \
+        --tty \
+        --pod testing \
+        --interactive \
+        --name python-tester \
+        --volume "${CALYCOPIS_CODE}:/calycopis:rw,z" \
+        fedora:42 \
+        bash
+
+        dnf install -y \
+            python3 \
+            python3-pip
+
+        pushd /calycopis/python/albert/client/
+
+            pip install -r requirements.txt
+
+        #
+        # Try get an offerset from the server.
+
+            python
+
+import openapi_client
+from openapi_client.rest import ApiException
+from pprint import pprint
+
+configuration = openapi_client.Configuration(
+    host = "http://127.0.0.1:8082"
+)
+
+with openapi_client.ApiClient(configuration) as api_client:
+
+    api_instance = openapi_client.DefaultApi(api_client)
+    uuid = '8452a684-e724-45dd-b000-07ab98998ac9'
+
+    try:
+        api_response = api_instance.execution_session_get(uuid)
+        print("The response of DefaultApi->execution_session_get:\n")
+        pprint(api_response)
+
+    except ApiException as e:
+        print("Exception when calling DefaultApi->execution_session_get: %s\n" % e)
+
+--START--
+....
+....
+pydantic_core._pydantic_core.ValidationError: 1 validation error for OfferedScheduleInterval
+start
+  Value error, must validate the regular expression
+    /^(?:(?:\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])(?:T(?:[01]\d|2[0-3]):[0-5]\d(?:[:][0-5]\d(?:\.\d+)?)?(?:Z|[+\-](?:[01]\d|2[0-3]):[0-5]\d)?)?)\/(?:(?:\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])(?:T(?:[01]\d|2[0-3]):[0-5]\d(?:[:][0-5]\d(?:\.\d+)?)?(?:Z|[+\-](?:[01]\d|2[0-3]):[0-5]\d)?)?)|(?:P\d+W|P(?=\d|T)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?))|(?:(?:P\d+W|P(?=\d|T)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?))\/(?:\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])(?:T(?:[01]\d|2[0-3]):[0-5]\d(?:[:][0-5]\d(?:\.\d+)?)?(?:Z|[+\-](?:[01]\d|2[0-3]):[0-5]\d)?)?))$/
+  [type=value_error, input_value='2025-08-10T14:13:00Z', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/value_error
+--END--
+
+    #
+    # This time it is our Java code that is wrong.
+    # It should always add a duration to the Interval, even if it is zero.
+    # Currently it skips the interval duration.
+    # https://github.com/Zarquan/Calycopis-broker/blob/c7943ce31336fe4da10eea442897f4de0df227c9/java/spring/spring-webapp/src/main/java/net/ivoa/calycopis/datamodel/component/ScheduledComponentEntity.java#L261-L269https://github.com/Zarquan/Calycopis-broker/blob/c7943ce31336fe4da10eea442897f4de0df227c9/java/spring/spring-webapp/src/main/java/net/ivoa/calycopis/datamodel/component/ScheduledComponentEntity.java#L261-L269
+
+            if (getAvailableStartDurationSeconds() > 0)
+                {
+                buffer.append(
+                    "/"
+                    );
+                buffer.append(
+                    getAvailableStartDuration().toString()
+                    );
+                }
+
+
+
+
+
+
+
+
+
+# -----------------------------------------------------
+# Try using the Python client.
+#[user@desktop]
+
+    source "${HOME:?}/calycopis.env"
+    podman run \
+        --rm \
+        --tty \
+        --pod testing \
+        --interactive \
+        --name python-tester \
+        --volume "${CALYCOPIS_CODE}:/calycopis:rw,z" \
+        fedora:42 \
+        bash
+
+        dnf install -y \
+            python3 \
+            python3-pip
+
+        pushd /calycopis/python/albert/client/
+
+            pip install -r requirements.txt
+
+        #
+        # Try get an offerset from the server.
+
+            python
+
+import openapi_client
+from openapi_client.rest import ApiException
+from pprint import pprint
+
+configuration = openapi_client.Configuration(
+    host = "http://127.0.0.1:8082"
+)
+
+uuid = '7875bf36-19f0-4712-9714-1bee7eec1175'
+
+with openapi_client.ApiClient(configuration) as api_client:
+
+    api_instance = openapi_client.DefaultApi(api_client)
+
+    try:
+        api_response = api_instance.execution_session_get(uuid)
+        print("The response of DefaultApi->execution_session_get:\n")
+        pprint(api_response)
+
+    except ApiException as e:
+        print("Exception when calling DefaultApi->execution_session_get: %s\n" % e)
+
+--START--
+ExecutionSessionResponse(
+    uuid='7875bf36-19f0-4712-9714-1bee7eec1175',
+    name='example-001-offer-0',
+    type='https://www.purl.org/ivoa.net/EB/schema/types/session/execution-session-response-1.0',
+    created=datetime.datetime(2025, 8, 10, 14, 35, 44, 166808, tzinfo=TzInfo(UTC)),
+    messages=None,
+    href='http://127.0.0.1:8082/sessions/7875bf36-19f0-4712-9714-1bee7eec1175',
+    schedule=ComponentSchedule(
+        offered=OfferedScheduleBlock(
+            preparing=OfferedScheduleInstant(duration=None, start='2025-08-10T14:36:00Z'),
+            available=OfferedScheduleInterval(duration='PT2H', start='2025-08-10T14:36:00Z/PT0S'),
+            releasing=None
+            ),
+        observed=None
+        ),
+    executable=JupyterNotebook(
+        uuid='a172c827-e0bd-4f1a-912f-d29d4638c206',
+        name='example-001-executable',
+        type='https://www.purl.org/ivoa.net/EB/schema/types/executable/jupyter-notebook-1.0',
+        created=datetime.datetime(2025, 8, 10, 14, 35, 44, 177691, tzinfo=TzInfo(UTC)),
+        messages=None,
+        schedule=None,
+        access=None,
+        location='https://www.example.org/example-001.ipynb'
+        ),
+    computer=SimpleComputeResource(
+        uuid='86dc1028-3444-43fc-9d99-a5006c9c85aa',
+        name='example-001-computer',
+        type='https://www.purl.org/ivoa.net/EB/schema/types/computer/simple-compute-resource-1.0',
+        created=None,
+        messages=None,
+        schedule=None,
+        cores=SimpleComputeCores(min=10, max=10),
+        memory=SimpleComputeMemory(min=10, max=10),
+        volumes=None),
+    storage=None,
+    volumes=None,
+    data=None,
+    phase=<ExecutionSessionPhase.OFFERED: 'OFFERED'>,
+    expires=datetime.datetime(2025, 8, 10, 19, 35, 43, 855229, tzinfo=TzInfo(UTC)),
+    options=None
+    )
+    ....
+--END--
+
+    #
+    # Yay - we have a Python client handling a response from a Java service.
+    # First time :-)
+    #
+
+    #
+    # Try sending a new request from Python.
+    #
+
+
+
