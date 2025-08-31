@@ -1,0 +1,189 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2025, Manchester (http://www.manchester.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-indent
+#
+# AIMetrics: []
+#
+
+    Target:
+
+        Integrating the broker and aggregator ..
+
+    Result:
+
+        Work in progress ...
+
+# -----------------------------------------------------
+
+    If we generate the API from the OpenAPI schema, then the aggregator
+    has to have both the client and server side classes.
+
+    In Java, the POJO Beans and Spring Beans are different.
+    Not in the classes themselves, but the annotations for serialization
+    are very different.
+
+    It might be easier to integrate the Python client and server classes.
+    From what I can see they are only minor difference between them.
+
+    We can try using the client code with the server side model classes
+    to see if it works.
+
+    Need to bring the parts together.
+    Schema generated code plugged into the Claude generated service.
+
+    Are the Java and Python generated classes part of the schema project ?
+    Are the generated classes stored as part of the code base ?
+
+    The project includes build tools to package the code for each interpretation.
+    A new release of the schema should generate a new set of packages
+    for each interpretation.
+
+    Are the interpretations all part of one uber git project,
+    or are they git sub-modules ?
+
+    Separate mini-projects in their own right ?
+    Each with their own packaging tools.
+
+    Each interpretation would generate a Java jar or a Python wheel.
+    https://stackoverflow.com/questions/31401762/python-packaging-wheels-vs-tarball-tar-gz
+
+    What would a 'release' of this project contain ?
+    Looks like a GitHub release allows more than one binary file.
+
+    Implications ...
+    Calycopis-broker wouldn't contain the OpenAPI schema for the service.
+    Calycopis-schema would contain the OpenAPI schema for all of the services.
+
+    OR
+
+    Calycopis-schema just contains the OpenAPI schema components shared by all of the services.
+
+    Calycopis-broker would contain the OpenAPI schema for the service, with references to
+    Calycopis-schema for the components.
+
+    Calycopis-broker-java-client would generate and package the Java client classes.
+    Calycopis-broker-java-spring would provide a Spring implementation of the service.
+
+    Calycopis-broker-python-client would generate and package the client classes.
+    Calycopis-broker-python-fastapi would provide a FastAPI implementation of the service.
+
+    I think this is better.
+
+    Calycopis-schema just contains the OpenAPI schema components
+
+    Calycopis-broker uses a symlink to add Calycopis-schema in the right place.
+    Later we could use a git sub-module instead.
+
+
+
+        Calycopis-schema
+          |
+          +-- bin
+          |     |
+          |     +-- generate.sh
+          |     |
+          |     +-- build-java.sh
+          |     |
+          |     +-- build-python.sh
+          |     |
+          |
+          +-- schema
+          |     |
+          |     +-- Calycopis-template.yaml
+          |     +-- Calycopis-editor.yaml
+          |     +-- Calycopis-agregator.yaml
+          |     +-- Calycopis-broker.yaml
+          |     |
+          |     +-- components
+          |     |     |
+          |     |     +--
+          |     |     +--
+          |     |
+          |     +-- types
+          |           |
+          |           +--
+          |           +--
+          |
+          +-- services
+                |
+                +-- broker
+                |     |
+                |     |
+                |     +-- java
+                |     |     |
+                |     |     +-- client
+                |     |     |     |
+                |     |     |     +-- generated
+                |     |     |     |     |
+                |     |     |     |     +-- ...
+                |     |     |     |     +-- ...
+                |     |     |     |     +-- ...
+                |     |     |     |
+                |     |     |     +-- tools
+                |     |     |           |
+                |     |     |           +-- ...
+                |     |     |
+                |     |     +-- spring
+                |     |     |     |
+                |     |           +-- generated
+                |     |           |     |
+                |     |           |     +-- ...
+                |     |           |     +-- ...
+                |     |           |     +-- ...
+                |     |           |
+                |     |           +-- tools
+                |     |                 |
+                |     |                 +-- ...
+                |     |
+                |     +-- python
+                |     |     |
+                |           +-- client
+                |           |     |
+                |           |     +-- generated
+                |           |     |     |
+                |           |     |     +-- ...
+                |           |     |     +-- ...
+                |           |     |     +-- ...
+                |           |     |
+                |           |     +-- tools
+                |           |           |
+                |           |           +-- ...
+                |           |
+                |           +-- fastapi
+                |           |     |
+                |                 +-- generated
+                |                 |     |
+                |                 |     +-- ...
+                |                 |     +-- ...
+                |                 |     +-- ...
+                |                 |
+                |                 +-- tools
+                |                       |
+                |                       +-- ...
+                |
+                +-- aggregator
+                |     |
+                |
+                +-- editor
+                |     |
+
+
+

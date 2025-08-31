@@ -1,0 +1,205 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2025, Manchester (http://www.manchester.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-indent
+#
+# AIMetrics: []
+#
+
+    Target:
+
+        Success
+
+    Result:
+
+        Work in progress ...
+
+# -----------------------------------------------------
+
+    The idea is to use the same components as lego bricks to build a number of different services.
+
+        Calycopis-schema
+          |
+          +-- schema
+                |
+                +-- services
+                |     |
+                |     +-- Calycopis-template.yaml
+                |     +-- Calycopis-editor.yaml
+                |     +-- Calycopis-agregator.yaml
+                |     +-- Calycopis-broker.yaml
+                |
+                +-- components
+                |     |
+                |     +--
+                |     +--
+                |
+                +-- types
+                      |
+                      +--
+                      +--
+
+
+        Calycopis-template
+
+            A template for a workflow step.
+            SoftwareDiscovery returns url that point to templates.
+            The existing SoftwareDiscovery service .. is redundant ?
+            The existing SoftwareDiscovery service gets renamed to WorkstepTemplate service.
+
+            SRCNet can have a SoftwareTemplate service if it wants.
+            SoftwareTemplate service GET request returns an instance of Calycopis-template.
+            GET /templates/{uuid} => instance of WorkstepTemplate
+            ... basically a web server.
+
+            A user project can include a WorkstepTemplate in their git repository.
+
+            Software Discovery becomes something different.
+            Software Discovery GET {search criteria} => a list of URLs pointing to WorkstepTemplates
+
+        Calycopis-editor
+
+            The top half of WorkflowExecution in the current architecture.
+            User selects a WorkstepTemplate from somewhere and loads it into the editor.
+
+            POST /requests content={template}
+            POST /requests origin={url}
+
+                creates a new => instance of WorkstepRequest based on the content of {template} or {origin}
+                with a new UUID, create date and owner
+                redirect to /requests/{uuid}
+
+            Editor API provides options to edit a WorkstepTemplate into a WorkstepRequest.
+
+
+        Calycopis-Aggregator extends BrokerOffersets API
+        Calycopis-aggregate.yaml
+
+            BrokerAggregator API (extends BrokerOffersets)
+            POST /offersets request={request}, services=[{url}, {url}, {url}] sort=[{path}, {path}]
+
+                creates a new => instance of Offerset based on the content of {request}
+                the offerset has a new UUID, create date and owner
+                redirect to /offersets/{uuid}
+
+                Sends the request to a specific list of services.
+
+            BrokerOffersets API
+            POST /offersets request={request}
+
+                creates a new => instance of Offerset based on the content of {request}
+                the offerset has a new UUID, create date and owner
+                redirect to /offersets/{uuid}
+
+                Implementation specific as to which services get polled.
+                It may depend on the user's identity and group membership.
+
+        Calycopis-broker.yaml
+
+            BrokerOffersets API
+            POST /offersets request={request}
+
+                creates a new => instance of Offerset based on the content of {request}
+                the offerset has a new UUID, create date and owner
+                redirect to /offersets/{uuid}
+
+            BrokerOffersets API
+            GET /offersets/{uuid}
+
+                current state of the offerset
+                status = {PROCESSING | COMPLETED}
+
+                Contains a list of WorkstepSession instances.
+
+            BrokerSessions API
+            GET /sessions/{uuid}
+
+                Get the current state of a WorkstepSession
+
+
+
+# -----------------------------------------------------
+
+    What is the difference between a template, request and a session ?
+
+    template has executable, compute, data and storage requirements
+    template may have expected duration for execution
+    template has placeholders for data resources
+        e.g. ivoa.content-type=spectra
+
+    request has specific locations for data resources
+        e.g. location={url}
+
+    request may have start interval and duration for execution
+
+        component
+          schedule
+            requested
+              execution
+                start
+                duration
+
+    an OFFERED session has an expiry date
+
+    in an OFFERED session, each component has an 'offered' start and duration for each of the stages
+
+        component
+          schedule
+            offered
+              preparing
+                start
+                duration
+              available
+                start
+                duration
+              releasing
+                start
+                duration
+
+    in an ACCEPTED session each component has a 'execution' start, duration, and status for each of the stages
+
+        component
+          schedule
+            execution
+              preparing
+                start
+                end
+                status
+              available
+                start
+                end
+                status
+              releasing
+                start
+                end
+                status
+
+    the execution values become the provenance of a COMPLETED session
+
+    to change a session into a template, delete the schedule
+
+        Calycopis-editor can take template, request or session as the origin
+        automatically truncates a session to build a new request
+
+
+
+
+
+
