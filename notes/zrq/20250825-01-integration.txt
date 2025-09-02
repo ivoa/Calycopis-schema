@@ -1,0 +1,848 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2025, Manchester (http://www.manchester.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-indent
+#
+# AIMetrics: []
+#
+
+    Target:
+
+        Integrating the broker and aggregator ..
+
+    Result:
+
+        Work in progress ...
+
+# -----------------------------------------------------
+
+    Bring things together.
+
+    Start with the schema.
+    Separate top level OpenAPI schema for the services
+
+        Calycopis-schema
+          |
+          +-- schema
+                |
+                +-- Calycopis-template.yaml
+                +-- Calycopis-editor.yaml
+                +-- Calycopis-agregator.yaml
+                +-- Calycopis-broker.yaml
+                |
+                +-- components
+                |     |
+                |     +--
+                |     +--
+                |
+                +-- types
+                      |
+                      +--
+                      +--
+
+
+    Create the agregator API from the service created by Claude.
+
+    Run the pre-processor on the broker and agregator APIs.
+
+        Calycopis-schema
+          |
+          +-- target
+                |
+                +-- schema
+                |     |
+                |     +-- Calycopis-agregator-full.yaml
+                |     +-- Calycopis-broker-full.yaml
+
+
+    Run the Spring generator on the broker API to generate the server side Java beans.
+    - this replaces the first step of the Java build
+    - can we split this into just the Beans and just the Spring service
+    - installed as a jar in local Maven repo
+
+    Run the Spring webapp build
+    - ....
+
+    Run the Java generator on the broker API to generate the client side Java beans.
+    - installed as a jar in local Maven repo
+    - not needed now
+
+    Run the Python generator on the broker API to generate the client side Python beans.
+    - how do we manage these as a package ?
+
+    Package the Java broker in a container
+    - todo ..
+
+    Run 2 instances of the Java broker in containers
+    - todo ..
+
+    Run the Python generator on the aggregator API to generate the client side Python beans.
+    - how do we handle these as a package ?
+
+    Run the FastAPI generator on the aggregator API to generate the server side Python stubs.
+    - how do we handle these as a package ?
+
+
+    Use the Claude aggregator code as a basis for a new implementation.
+    - using the FastAPI classes for the service methods
+    - using the Python broker-client for the brokers
+
+    - using the Python aggregator-client to test the service
+    - using curl to test the service
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Create new branches
+#[user@desktop]
+
+    branchname=integration
+
+    newbranch=$(date '+%Y%m%d')-zrq-${branchname:?}
+
+    source "${HOME:?}/calycopis.env"
+    pushd "${CALYCOPIS_CODE:?}"
+
+        git status
+        git checkout main
+        git checkout -b "${newbranch:?}"
+
+    popd
+
+    source "${HOME:?}/calycopis.env"
+    pushd "${TREBULA_CODE:?}"
+
+        git status
+        git checkout main
+        git checkout -b "${newbranch:?}"
+
+    popd
+
+    source "${HOME:?}/loxura.env"
+    pushd "${LOXURA_CODE:?}"
+
+        git status
+        git checkout main
+        git checkout -b "${newbranch:?}"
+
+    popd
+
+
+# -----------------------------------------------------
+# Run an instance of our developer tools.
+#[user@desktop]
+
+    source "${HOME:?}/calycopis.env"
+    source "${HOME:?}/loxura.env"
+    podman run \
+        --rm \
+        --tty \
+        --interactive \
+        --name openapi-dev \
+        --volume "${TREBULA_CODE}:/trebula:rw,z" \
+        --volume "${ISOBEON_CODE}:/isobeon:rw,z" \
+        --volume "${CALYCOPIS_CODE}:/calycopis:rw,z" \
+        --volume "${LOXURA_CODE}:/loxura:rw,z" \
+        --volume "${HOME}/.m2/repository:/root/.m2/repository:rw,z" \
+        ghcr.io/ivoa/calycopis/developer-tools:2025.08.12 \
+        bash
+
+        ....
+        ....
+
+
+
+        ghcr.io/ivoa/calycopis/java-builder:2024.08.30 \
+        ghcr.io/ivoa/calycopis/developer-tools:2025.08.12 \
+
+
+# -----------------------------------------------------
+# Run the pre-processor on the broker API.
+# - TODO bash script to run it
+# - TODO include isobeon as a git module
+#[root@calycopis-dev]
+
+        Calycopis-isobeon
+        /isobeon
+          |
+          +-- schema-processor.py
+          +-- requirements.txt
+          +-- ....
+
+        Calycopis-schema
+        /trebula
+          |
+          +-- bin
+          |     |
+          |     +-- build.sh
+          |
+          +-- schema
+          |     |
+          |     +-- Calycopis-broker.yaml
+          |     +-- ....
+          |     |
+          |     +-- components
+          |     |     |
+          |     |     +-- ....
+          |     |     +-- ....
+          |     |
+          |     +-- types
+          |           |
+          |           +-- ....
+          |           +-- ....
+          |
+          +-- target
+                |
+                +-- Calycopis-broker-full.yaml
+                +-- ....
+
+    ls -al "/trebula/target"
+    rm -rf "/trebula/target"
+    mkdir  "/trebula/target"
+
+    /isobeon/schema-processor.py \
+        "/trebula/schema/Calycopis-broker.yaml" \
+        "/trebula/target/Calycopis-broker-full.yaml"
+
+--START--
+....
+....
+Inlining from discriminator mapping: IntegerValueUpdate
+Expanding short $ref: 'AbstractUpdate' → '#/components/schemas/AbstractUpdate'
+Inlining from discriminator mapping: IntegerDeltaUpdate
+Expanding short $ref: 'AbstractUpdate' → '#/components/schemas/AbstractUpdate'
+✅ All references processed and saved.
+--END--
+
+
+# -----------------------------------------------------
+# Run the Spring generator on the broker API to generate the server side Java beans.
+# - how do we link the openapi generated schema into the Java project ?
+# - quick-fix symlink /trebula/target/Calycopis-broker-full.yaml
+# - TODO maven project version
+#[root@calycopis-dev]
+
+        Calycopis-broker
+        /calycopis
+          |
+          +-- spring
+          |     |
+                +-- spring-openapi
+                |     |
+                      +-- pom.xml
+                      |     |
+                      |     +-- .../inputSpec
+                      |                |
+                      |                +-- ${project.basedir}/openapi/target/Calycopis-broker-full.yaml
+                      |
+                      +-- openapi
+                      |     |
+                      |     +-- target
+                      |           |
+                      |           +-- Calycopis-broker-full.yaml --> /trebula/target/Calycopis-broker-full.yaml
+                      |
+                      +-- target
+                            |
+                            +-- calycopis-broker-openapi-0.0.1-SNAPSHOT-20250812.jar
+                            |
+                           TODO separate the Spring classes from the model.
+                            |
+                            +-- calycopis-broker-openapi-model-0.0.1.jar
+                            +-- calycopis-broker-openapi-spring-0.0.1.jar
+
+    pushd /calycopis/java/spring/spring-openapi
+        pushd openapi
+            rm -rf target
+            mkdir  target
+            pushd  target
+                ln -s /trebula/target/Calycopis-broker-full.yaml \
+                    Calycopis-broker-full.yaml
+            popd
+        popd
+    popd
+
+    pushd /calycopis/java/spring/spring-openapi ; ./mvnw clean install ; popd
+
+--START--
+....
+....
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  10.956 s
+[INFO] Finished at: 2025-08-26T05:22:51Z
+[INFO] ------------------------------------------------------------------------
+--END--
+
+
+# -----------------------------------------------------
+
+    TODO Change the Java package and component names.
+
+	    net.ivoa.calycopis.broker
+
+	        calycopis-broker-openapi-model
+	        calycopis-broker-openapi-spring
+
+# -----------------------------------------------------
+# Build the Spring webapp
+# - load the calycopis-broker-openapi dependencies from the local Maven cache.
+# - TODO maven project version
+#[root@calycopis-dev]
+
+        Calycopis-broker
+        /calycopis
+          |
+          +-- spring
+          |     |
+                |
+                +-- spring-webapp
+                      |
+                      +-- pom.xml
+                      |     |
+                      |     +-- .../dependencies
+                      |                |
+                      |                +-- calycopis-openapi-0.0.1-SNAPSHOT-20250825.jar
+                      |
+                      +-- target
+                            |
+                            +-- calycopis-broker-webapp-0.0.1-SNAPSHOT-20250825.jar
+
+
+    pushd /calycopis/java/spring/spring-webapp ; ./mvnw clean install ; popd
+
+--START--
+....
+....
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  9.854 s
+[INFO] Finished at: 2025-08-26T05:23:30Z
+[INFO] ------------------------------------------------------------------------
+--END--
+
+
+# -----------------------------------------------------
+# Package the Java broker in a container
+# - TODO jarfile version
+# - TODO how to do this from inside the toolset container
+#[user@desktop]
+
+    jarfile=calycopis-webapp-0.0.1-SNAPSHOT-20250825.jar
+
+    buildtag=$(date '+%Y.%m.%d')
+    buildtime=$(date '+%Y-%m-%dT%H:%M:%S')
+
+    source "${HOME:?}/calycopis.env"
+    pushd "${CALYCOPIS_CODE}"
+
+        podman build \
+            --build-arg "jarfile=${jarfile:?}" \
+            --build-arg "buildtag=${buildtag:?}" \
+            --build-arg "buildtime=${buildtime:?}" \
+            --tag "calycopis/calycopis-broker:latest" \
+            --tag "calycopis/calycopis-broker:${buildtag:?}" \
+            --file "docker/java-runtime/Dockerfile" \
+            "java/spring/spring-webapp/target"
+
+    popd
+
+    podman images
+
+--START--
+REPOSITORY                              TAG               IMAGE ID      CREATED         SIZE
+localhost/calycopis/calycopis-broker    2025.08.26        08525fee5243  1 second ago    525 MB
+localhost/calycopis/calycopis-broker    latest            08525fee5243  1 second ago    525 MB
+....
+....
+--END--
+
+
+# -----------------------------------------------------
+# Run 2 instances of the Java broker in containers
+#[user@desktop]
+
+    podman run \
+        --rm \
+        --tty \
+        --interactive \
+        --publish 8000:8082 \
+        localhost/calycopis/calycopis-broker:2025.08.26
+
+        ....
+        ....
+
+
+    podman run \
+        --rm \
+        --tty \
+        --interactive \
+        --publish 8001:8082 \
+        localhost/calycopis/calycopis-broker:2025.08.26
+
+        ....
+        ....
+
+
+# -----------------------------------------------------
+# Check we can access the services from the host machine.
+#[user@desktop]
+
+    source "${HOME:?}/calycopis.env"
+    examplename=example-001
+    examplepath=${CALYCOPIS_CODE}/examples/${examplename}
+
+    curl \
+        --silent \
+        --show-error \
+        --header 'Content-Type: application/yaml' \
+        --data-binary "@${examplepath}/${examplename}-001-offerset-request.yaml" \
+        --header 'Accept: application/yaml' \
+        'http://127.0.0.1:8000/offersets' \
+    | yq '.' \
+    | yq '
+        .offers[] | [
+                {
+                "session": {
+                    "name": .name,
+                    "created": .created,
+                    "schedule": .schedule
+                    }
+                }
+            ]
+        '
+
+    curl \
+        --silent \
+        --show-error \
+        --header 'Content-Type: application/yaml' \
+        --data-binary "@${examplepath}/${examplename}-001-offerset-request.yaml" \
+        --header 'Accept: application/yaml' \
+        'http://[2001:8b0:be72:d4eb:a60:6eff:fe71:3a24]:8000/offersets' \
+    | yq '.' \
+    | yq '
+        .offers[] | [
+                {
+                "session": {
+                    "name": .name,
+                    "created": .created,
+                    "schedule": .schedule
+                    }
+                }
+            ]
+        '
+
+--START--
+- session:
+    name: "example-001-offer-0"
+    created: "2025-08-26T05:50:56.880088483Z"
+    schedule:
+      offered:
+        preparing:
+          start: "2025-08-26T05:51:00Z"
+        available:
+          duration: "PT2H"
+          start: "2025-08-26T05:51:00Z/PT0S"
+- session:
+    name: "example-001-offer-1"
+    created: "2025-08-26T05:50:56.894612687Z"
+    schedule:
+      offered:
+        preparing:
+          start: "2025-08-26T07:51:00Z"
+        available:
+          duration: "PT2H"
+          start: "2025-08-26T07:51:00Z/PT0S"
+- session:
+    name: "example-001-offer-2"
+    created: "2025-08-26T05:50:56.908914699Z"
+    schedule:
+      offered:
+        preparing:
+          start: "2025-08-26T09:51:00Z"
+        available:
+          duration: "PT2H"
+          start: "2025-08-26T09:51:00Z/PT0S"
+- session:
+    name: "example-001-offer-3"
+    created: "2025-08-26T05:50:56.926880514Z"
+    schedule:
+      offered:
+        preparing:
+          start: "2025-08-26T11:51:00Z"
+        available:
+          duration: "PT2H"
+          start: "2025-08-26T11:51:00Z/PT0S"
+--END--
+
+
+    curl \
+        --silent \
+        --show-error \
+        --header 'Content-Type: application/yaml' \
+        --data-binary "@${examplepath}/${examplename}-001-offerset-request.yaml" \
+        --header 'Accept: application/yaml' \
+        'http://127.0.0.1:8001/offersets' \
+    | yq '.' \
+    | yq '
+        .offers[] | [
+                {
+                "session": {
+                    "name": .name,
+                    "created": .created,
+                    "schedule": .schedule
+                    }
+                }
+            ]
+        '
+
+--START--
+- session:
+    name: "example-001-offer-0"
+    created: "2025-08-26T05:51:23.049744775Z"
+    schedule:
+      offered:
+        preparing:
+          start: "2025-08-26T05:52:00Z"
+        available:
+          duration: "PT2H"
+          start: "2025-08-26T05:52:00Z/PT0S"
+- session:
+    name: "example-001-offer-1"
+    created: "2025-08-26T05:51:23.060055364Z"
+    schedule:
+      offered:
+        preparing:
+          start: "2025-08-26T07:52:00Z"
+        available:
+          duration: "PT2H"
+          start: "2025-08-26T07:52:00Z/PT0S"
+- session:
+    name: "example-001-offer-2"
+    created: "2025-08-26T05:51:23.069386135Z"
+    schedule:
+      offered:
+        preparing:
+          start: "2025-08-26T09:52:00Z"
+        available:
+          duration: "PT2H"
+          start: "2025-08-26T09:52:00Z/PT0S"
+- session:
+    name: "example-001-offer-3"
+    created: "2025-08-26T05:51:23.080564825Z"
+    schedule:
+      offered:
+        preparing:
+          start: "2025-08-26T11:52:00Z"
+        available:
+          duration: "PT2H"
+          start: "2025-08-26T11:52:00Z/PT0S"
+--END--
+
+# -----------------------------------------------------
+
+    Can we access the services from a container ?
+
+    source "${HOME:?}/calycopis.env"
+    source "${HOME:?}/loxura.env"
+    podman run \
+        --rm \
+        --tty \
+        --interactive \
+        --name openapi-dev \
+        --volume "${TREBULA_CODE}:/trebula:rw,z" \
+        --volume "${ISOBEON_CODE}:/isobeon:rw,z" \
+        --volume "${CALYCOPIS_CODE}:/calycopis:rw,z" \
+        --volume "${LOXURA_CODE}:/loxura:rw,z" \
+        --volume "${HOME}/.m2/repository:/root/.m2/repository:rw,z" \
+        ghcr.io/ivoa/calycopis/developer-tools:2025.08.12 \
+        bash
+
+
+    CALYCOPIS_CODE=/calycopis
+    examplename=example-001
+    examplepath=${${CALYCOPIS_CODE}}/examples/${examplename}
+
+    curl \
+        --silent \
+        --show-error \
+        --header 'Content-Type: application/yaml' \
+        --data-binary "@${examplepath}/${examplename}-001-offerset-request.yaml" \
+        --header 'Accept: application/yaml' \
+        'http://[2001:8b0:be72:d4eb:a60:6eff:fe71:3a24]:8000/offersets' \
+    | yq '.'
+
+--START--
+curl: (7) Failed to connect to 127.0.0.1 port 8000 after 0 ms: Could not connect to server
+....
+curl: (7) Failed to connect to 10.1.0.2 port 8000 after 0 ms: Could not connect to server
+....
+curl: (7) Failed to connect to 2001:8b0:be72:d4eb:a60:6eff:fe71:3a24 port 8000 after 0 ms: Could not connect to server
+--END--
+
+    #
+    # So .. no.
+    # Even though we are publishing the ports.
+    # Basically a real pain.
+    # Using a Pod isn't an option because we want two instances of the same container,
+    # and they both listen on the same port.
+    # Using a Podman network doesn't work on this machine.
+    #
+    # Suspect this is partly due to the fact that Podman runs the containers rootless.
+    # It might work if we were using the original Docker daemon service.
+    #
+
+    #
+    # It works if we connect the client to the host network.
+    #
+
+    source "${HOME:?}/calycopis.env"
+    source "${HOME:?}/loxura.env"
+    podman run \
+        --rm \
+        --tty \
+        --interactive \
+        --name openapi-dev \
+        --volume "${TREBULA_CODE}:/trebula:rw,z" \
+        --volume "${ISOBEON_CODE}:/isobeon:rw,z" \
+        --volume "${CALYCOPIS_CODE}:/calycopis:rw,z" \
+        --volume "${LOXURA_CODE}:/loxura:rw,z" \
+        --volume "${HOME}/.m2/repository:/root/.m2/repository:rw,z" \
+        --network host \
+        ghcr.io/ivoa/calycopis/developer-tools:2025.08.12 \
+        bash
+
+        CALYCOPIS_CODE=/calycopis
+        examplename=example-001
+        examplepath=${CALYCOPIS_CODE}/examples/${examplename}
+
+        curl \
+            --silent \
+            --show-error \
+            --header 'Content-Type: application/yaml' \
+            --data-binary "@${examplepath}/${examplename}-001-offerset-request.yaml" \
+            --header 'Accept: application/yaml' \
+            'http://127.0.0.1:8000/offersets' \
+        | yq '. | omit(["offers"])'
+
+--START--
+uuid: "78c2e3dd-9081-47c2-8b79-9c7a050d02df"
+name: "example-001"
+type: "https://www.purl.org/ivoa.net/EB/schema/types/offerset/offerset-response-1.0"
+created: "2025-08-26T16:00:31.13600713Z"
+href: "http://127.0.0.1:8000/offersets/78c2e3dd-9081-47c2-8b79-9c7a050d02df"
+result: "YES"
+--END--
+
+
+        curl \
+            --silent \
+            --show-error \
+            --header 'Content-Type: application/yaml' \
+            --data-binary "@${examplepath}/${examplename}-001-offerset-request.yaml" \
+            --header 'Accept: application/yaml' \
+            'http://10.1.0.2:8000/offersets' \
+        | yq '. | omit(["offers"])'
+
+--START--
+uuid: "e52160dc-5f19-4851-825d-76d228c36cab"
+name: "example-001"
+type: "https://www.purl.org/ivoa.net/EB/schema/types/offerset/offerset-response-1.0"
+created: "2025-08-26T16:00:45.754374596Z"
+href: "http://10.1.0.2:8000/offersets/e52160dc-5f19-4851-825d-76d228c36cab"
+result: "YES"
+--END--
+
+
+        curl \
+            --silent \
+            --show-error \
+            --header 'Content-Type: application/yaml' \
+            --data-binary "@${examplepath}/${examplename}-001-offerset-request.yaml" \
+            --header 'Accept: application/yaml' \
+            'http://[2001:8b0:be72:d4eb:a60:6eff:fe71:3a24]:8000/offersets' \
+        | yq '. | omit(["offers"])'
+
+--START--
+uuid: "87747a23-16c1-40c3-a0a0-4d20f2796aae"
+name: "example-001"
+type: "https://www.purl.org/ivoa.net/EB/schema/types/offerset/offerset-response-1.0"
+created: "2025-08-26T16:01:01.914307465Z"
+href: "http://[2001:8b0:be72:d4eb:a60:6eff:fe71:3a24]:8000/offersets/87747a23-16c1-40c3-a0a0-4d20f2796aae"
+result: "YES"
+--END--
+
+
+# -----------------------------------------------------
+
+    Run the Spring generator on the broker API to generate the client side Java beans.
+    -- how are these different from the model classes ?
+    -- calycopis-broker-client-0.0.1-SNAPSHOT-20250812.jar
+    -- later
+
+
+# -----------------------------------------------------
+
+    Run the Python generator on the broker API to generate the client side Python beans.
+    - does it make sense to manage this as a Maven task ?
+    - how do we manage these as a package ?
+    - bash script for now
+
+    - TODO change the name of the package from openapi_client to Calycopis_broker_client
+      https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/python.md
+      projectName = python project name
+
+        Calycopis-broker
+        /calycopis
+          |
+          +-- python
+          |     |
+                +-- broker-client
+                |     |
+                      +-- openapi
+                      |     |
+                      |     +-- Calycopis-broker-full.yaml --> /trebula/target/Calycopis-broker-full.yaml
+                      |
+                      +-- bin
+                      |     |
+                      |     +-- build.sh
+                      |
+                      +-- target
+                            |
+                            +-- ....
+
+    /calycopis/python/bin/build-client.sh
+
+
+# -----------------------------------------------------
+
+    Create the aggregator API
+
+        Calycopis-schema
+        /trebula
+          |
+          +-- schema
+          |     |
+          |     +-- services
+          |           |
+          |           +-- Calycopis-agregator.yaml
+
+
+# -----------------------------------------------------
+
+    Run the pre-processor on the agregator API.
+    - TODO bash script to run it
+    - TODO include isobeon as a module
+
+        Calycopis-isobeon
+        /isobeon
+          |
+          +-- schema-processor.py
+          +-- requirements.txt
+          +-- ....
+
+        Calycopis-schema
+        /trebula
+          |
+          +-- bin
+          |     |
+          |     +-- build.sh
+          |
+          +-- schema
+          |     |
+          |     +-- services
+          |           |
+          |           +-- Calycopis-agregator.yaml
+          |           +-- ....
+          |
+          +-- target
+                |
+                +-- Calycopis-agregator-full.yaml
+                +-- ....
+
+# -----------------------------------------------------
+
+    Run the Python generator on the aggregator API to generate the client side Python beans.
+    - how do we manage these as a package ?
+
+    - TODO change the name of the package from openapi_client to Calycopis_aggregator_client
+      https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/python.md
+      projectName = python project name
+
+        Calycopis-aggregator
+        /calycopis
+          |
+          +-- python
+          |     |
+                +-- aggregator-client
+                |     |
+                      +-- openapi
+                      |     |
+                      |     +-- Calycopis-aggregator-full.yaml --> /trebula/target/Calycopis-aggregator-full.yaml
+                      |
+                      +-- bin
+                      |     |
+                      |     +-- build.sh
+                      |
+                      +-- target
+                            |
+                            +-- ....
+
+
+# -----------------------------------------------------
+
+    Run the Python generator on the aggregator API to generate the server side Python beans.
+    - does it make sense to manage this as a Maven task ?
+    - how do we manage these as a package ?
+    - bash script for now
+
+    - TODO change the name of the package from openapi_client to Xyz_aggregator_fastapi
+      https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/python.md
+      projectName = python project name
+
+        Calycopis-aggregator
+        /calycopis
+          |
+          +-- python
+          |     |
+                +-- aggregator-fastapi
+                |     |
+                      +-- openapi
+                      |     |
+                      |     +-- Calycopis-aggregator-full.yaml --> /trebula/target/Calycopis-aggregator-full.yaml
+                      |
+                      +-- bin
+                      |     |
+                      |     +-- build.sh
+                      |
+                      +-- target
+                            |
+                            +-- ....
+
+
+# -----------------------------------------------------
+
+    Use the Claude aggregator code as a basis for a new implementation.
+    - using the FastAPI classes for the service methods
+    - using the Python broker-client for the brokers
+
+    - using the Python aggregator-client to test the service
+    - using curl to test the service
+
