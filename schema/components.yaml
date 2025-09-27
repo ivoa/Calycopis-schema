@@ -555,10 +555,8 @@ components:
           $ref: './components/utils.yaml#/components/schemas/ISO8601Duration'
         start:
           description: >-
-            An array of requested start times.
-          type: array
-          items:
-            $ref: './components/utils.yaml#/components/schemas/ISO8601Interval'
+            The requested start time.
+          $ref: './components/utils.yaml#/components/schemas/ISO8601Interval'
 
     RequestedScheduleBlock:
       description: >-
@@ -569,27 +567,27 @@ components:
         requested:
           $ref: 'RequestedScheduleItem'
 
-    OfferedScheduleInstant:
+    OfferedScheduleDurationInstant:
       description: >-
-        Details of an offered timing.
+        Details of an offered instant.
       type: object
-      title: OfferedScheduleInstant
+      title: OfferedScheduleDurationInstant
       properties:
-        duration:
-          $ref: './components/utils.yaml#/components/schemas/ISO8601Duration'
         start:
           $ref: './components/utils.yaml#/components/schemas/ISO8601Instant'
-
-    OfferedScheduleInterval:
-      description: >-
-        Details of an offered timing.
-      type: object
-      title: OfferedScheduleInterval
-      properties:
         duration:
           $ref: './components/utils.yaml#/components/schemas/ISO8601Duration'
+
+    OfferedScheduleDurationInterval:
+      description: >-
+        Details of an offered interval.
+      type: object
+      title: OfferedScheduleDurationInterval
+      properties:
         start:
           $ref: './components/utils.yaml#/components/schemas/ISO8601Interval'
+        duration:
+          $ref: './components/utils.yaml#/components/schemas/ISO8601Duration'
 
     OfferedScheduleBlock:
       description: >-
@@ -598,11 +596,11 @@ components:
       title: OfferedScheduleBlock
       properties:
         preparing:
-          $ref: 'OfferedScheduleInstant'
+          $ref: 'OfferedScheduleDurationInstant'
         available:
-          $ref: 'OfferedScheduleInterval'
+          $ref: 'OfferedScheduleDurationInterval'
         releasing:
-          $ref: 'OfferedScheduleInstant'
+          $ref: 'OfferedScheduleDurationInstant'
 
     ObservedScheduleItem:
       description: >-
@@ -610,14 +608,14 @@ components:
       type: object
       title: ObservedScheduleItem
       properties:
-        start:
-          #$ref: './components/utils.yaml#/components/schemas/ISO8601Instant'
-          type: string
-          format: date-time
-        done:
-          #$ref: './components/utils.yaml#/components/schemas/ISO8601Instant'
-          type: string
-          format: date-time
+        started:
+          $ref: './components/utils.yaml#/components/schemas/ISO8601Instant'
+          #type: string
+          #format: date-time
+        finished:
+          $ref: './components/utils.yaml#/components/schemas/ISO8601Instant'
+          #type: string
+          #format: date-time
 
     ObservedScheduleBlock:
       description: >-
