@@ -93,27 +93,28 @@ components:
 
     ScheduledComponent:
       description: >-
-        Adds a schedule for this component.
+        The execution schedule for this component.
       type: object
       title: ScheduledComponent
       properties:
         schedule:
           description: >-
-            The expected schedule for this component.
+            The schedule for this component.
           xml:
             name: schedule
           $ref: 'ComponentSchedule'
 
-    ComponentSchedule:
-      description: >-
-        The schedule elements for a ScheduledComponent.
-      type: object
-      title: ComponentSchedule
-      properties:
-        offered:
-          $ref: 'OfferedScheduleBlock'
-        observed:
-          $ref: 'ObservedScheduleBlock'
+#   ComponentSchedule:
+#     description: >-
+#       The schedule elements for a ScheduledComponent.
+#     type: object
+#     title: ComponentSchedule
+#     properties:
+#       offered:
+#         $ref: 'OfferedScheduleBlock'
+#       # Deprecate this
+#       observed:
+#         $ref: 'ObservedScheduleBlock'
 
 # compute-resources.yaml
 
@@ -567,70 +568,72 @@ components:
         requested:
           $ref: 'RequestedScheduleItem'
 
-    OfferedScheduleDurationInstant:
+    ScheduleDurationInstant:
       description: >-
-        Details of an offered instant.
+        Details of a schedule instant and duration.
       type: object
-      title: OfferedScheduleDurationInstant
+      title: ScheduleDurationInstant
       properties:
         start:
           $ref: './components/utils.yaml#/components/schemas/ISO8601Instant'
         duration:
           $ref: './components/utils.yaml#/components/schemas/ISO8601Duration'
 
-    OfferedScheduleDurationInterval:
+    ScheduleDurationInterval:
       description: >-
-        Details of an offered interval.
+        Details of a schedule interval and duration.
       type: object
-      title: OfferedScheduleDurationInterval
+      title: ScheduleDurationInterval
       properties:
         start:
           $ref: './components/utils.yaml#/components/schemas/ISO8601Interval'
         duration:
           $ref: './components/utils.yaml#/components/schemas/ISO8601Duration'
 
-    OfferedScheduleBlock:
+    ComponentSchedule:
       description: >-
         Details of the offered timings.
       type: object
-      title: OfferedScheduleBlock
+      title: ComponentSchedule
       properties:
         preparing:
-          $ref: 'OfferedScheduleDurationInstant'
+          $ref: 'ScheduleDurationInstant'
         available:
-          $ref: 'OfferedScheduleDurationInterval'
+          # Why do we need an interval here ?
+          $ref: 'ScheduleDurationInterval'
         releasing:
-          $ref: 'OfferedScheduleDurationInstant'
+          $ref: 'ScheduleDurationInstant'
 
-    ObservedScheduleItem:
-      description: >-
-        Details of the observed timings.
-      type: object
-      title: ObservedScheduleItem
-      properties:
-        started:
-          $ref: './components/utils.yaml#/components/schemas/ISO8601Instant'
-          #type: string
-          #format: date-time
-        finished:
-          $ref: './components/utils.yaml#/components/schemas/ISO8601Instant'
-          #type: string
-          #format: date-time
+#   # TODO Deprecate this
+#   ObservedScheduleItem:
+#     description: >-
+#       Details of the observed timings.
+#     type: object
+#     title: ObservedScheduleItem
+#     properties:
+#       started:
+#         $ref: './components/utils.yaml#/components/schemas/ISO8601Instant'
+#         #type: string
+#         #format: date-time
+#       finished:
+#         $ref: './components/utils.yaml#/components/schemas/ISO8601Instant'
+#         #type: string
+#         #format: date-time
+#
+#   # TODO Deprecate this
+#   ObservedScheduleBlock:
+#     description: >-
+#       Details of the observed timings.
+#     type: object
+#     title: ObservedScheduleBlock
+#     properties:
+#       preparing:
+#         $ref: 'ObservedScheduleItem'
+#       available:
+#         $ref: 'ObservedScheduleItem'
+#       releasing:
+#         $ref: 'ObservedScheduleItem'
 
-    ObservedScheduleBlock:
-      description: >-
-        Details of the observed timings.
-      type: object
-      title: ObservedScheduleBlock
-      properties:
-        preparing:
-          $ref: 'ObservedScheduleItem'
-        available:
-          $ref: 'ObservedScheduleItem'
-        releasing:
-          $ref: 'ObservedScheduleItem'
-
-#   ExecutionResourceList:
     ExecutionComponents:
       description: >-
         The combination of an executable and the compute, storage, volumes, and data resources it needs.
