@@ -51,7 +51,7 @@ components:
       properties:
         uuid:
           description: >-
-            A machine readable UUID, assigned by the server.
+            A machine readable UUID, assigned when a component is created in a service.
           type: string
           format: uuid
         name:
@@ -64,6 +64,10 @@ components:
           type: string
           xml:
             attribute: true
+        description:
+          description: >-
+            A human readable description.
+          type: string
         created:
           description: >-
             The date and time the component was created.
