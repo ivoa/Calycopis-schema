@@ -128,7 +128,7 @@ components:
       discriminator:
         propertyName: type
         mapping:
-          "https://www.purl.org/ivoa.net/EB/schema/types/computer/simple-compute-resource-1.0": './types/computer/simple-compute-resource-1.0.yaml#/components/schemas/SimpleComputeResource'
+          "https://www.purl.org/ivoa.net/EB/schema/types/compute/simple-compute-resource-1.0": './types/compute/simple-compute-resource-1.0.yaml#/components/schemas/SimpleComputeResource'
       allOf:
         - $ref: 'AbstractComponent'
         - $ref: 'ScheduledComponent'
