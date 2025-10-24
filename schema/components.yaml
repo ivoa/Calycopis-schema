@@ -642,7 +642,7 @@ components:
       properties:
         executable:
           $ref: 'AbstractExecutable'
-        computer:
+        compute:
           $ref: 'AbstractComputeResource'
         storage:
           $ref: 'StorageResourceList'
