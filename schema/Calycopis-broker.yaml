@@ -46,13 +46,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './components.yaml#/components/schemas/OfferSetRequest'
+              $ref: 'components.yaml#/components/schemas/OfferSetRequest'
           application/xml:
             schema:
-              $ref: './components.yaml#/components/schemas/OfferSetRequest'
+              $ref: 'components.yaml#/components/schemas/OfferSetRequest'
           application/yaml:
             schema:
-              $ref: './components.yaml#/components/schemas/OfferSetRequest'
+              $ref: 'components.yaml#/components/schemas/OfferSetRequest'
         required: true
       # TODO Errors return error codes and ErrorResponse.
       responses:
@@ -71,13 +71,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components.yaml#/components/schemas/OfferSetResponse'
+                $ref: 'components.yaml#/components/schemas/OfferSetResponse'
             application/xml:
               schema:
-                $ref: './components.yaml#/components/schemas/OfferSetResponse'
+                $ref: 'components.yaml#/components/schemas/OfferSetResponse'
             application/yaml:
               schema:
-                $ref: './components.yaml#/components/schemas/OfferSetResponse'
+                $ref: 'components.yaml#/components/schemas/OfferSetResponse'
 
   /offersets/{uuid}:
     get:
@@ -99,13 +99,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components.yaml#/components/schemas/OfferSetResponse'
+                $ref: 'components.yaml#/components/schemas/OfferSetResponse'
             application/xml:
               schema:
-                $ref: './components.yaml#/components/schemas/OfferSetResponse'
+                $ref: 'components.yaml#/components/schemas/OfferSetResponse'
             application/yaml:
               schema:
-                $ref: './components.yaml#/components/schemas/OfferSetResponse'
+                $ref: 'components.yaml#/components/schemas/OfferSetResponse'
 
   /sessions/{uuid}:
     get:
@@ -127,13 +127,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components.yaml#/components/schemas/ExecutionSessionResponse'
+                $ref: 'components.yaml#/components/schemas/ExecutionSessionResponse'
             application/xml:
               schema:
-                $ref: './components.yaml#/components/schemas/ExecutionSessionResponse'
+                $ref: 'components.yaml#/components/schemas/ExecutionSessionResponse'
             application/yaml:
               schema:
-                $ref: './components.yaml#/components/schemas/ExecutionSessionResponse'
+                $ref: 'components.yaml#/components/schemas/ExecutionSessionResponse'
 
     post:
       operationId: ExecutionSessionPost
@@ -152,13 +152,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './components.yaml#/components/schemas/UpdateRequest'
+              $ref: 'components.yaml#/components/schemas/UpdateRequest'
           application/xml:
             schema:
-              $ref: './components.yaml#/components/schemas/UpdateRequest'
+              $ref: 'components.yaml#/components/schemas/UpdateRequest'
           application/yaml:
             schema:
-              $ref: './components.yaml#/components/schemas/UpdateRequest'
+              $ref: 'components.yaml#/components/schemas/UpdateRequest'
       # TODO Errors return error codes and ErrorResponse.
       responses:
         "200":
@@ -167,12 +167,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './components.yaml#/components/schemas/ExecutionSessionResponse'
+                $ref: 'components.yaml#/components/schemas/ExecutionSessionResponse'
             application/xml:
               schema:
-                $ref: './components.yaml#/components/schemas/ExecutionSessionResponse'
+                $ref: 'components.yaml#/components/schemas/ExecutionSessionResponse'
             application/yaml:
               schema:
-                $ref: './components.yaml#/components/schemas/ExecutionSessionResponse'
+                $ref: 'components.yaml#/components/schemas/ExecutionSessionResponse'
 
 

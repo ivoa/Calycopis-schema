@@ -46,7 +46,6 @@ components:
       description: >-
         A simple volume mount.
       allOf:
-        # $ref: '../../openapi.yaml#AbstractVolumeMount'
         - $ref: '../../components.yaml#/components/schemas/AbstractVolumeMount'
         - type: object
           properties:

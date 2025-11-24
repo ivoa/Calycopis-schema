@@ -86,7 +86,7 @@ components:
                   xml:
                     name: requested
                  #$ref: 'ScheduleRequestBlock'
-                  $ref: '../../components.yaml#/components/schemas/ScheduleRequestBlock'
+                  $ref: '../../components.yaml#/components/schemas/Schedule'
                 preparing:
                   xml:
                     name: preparing
